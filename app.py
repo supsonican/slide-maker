@@ -11,8 +11,12 @@ st.set_page_config(page_title="AIスライド生成ツール", page_icon="📊")
 st.title("📊 AIスライド自動生成ツール")
 st.write("プロット（原案）を入力するだけで、ルールに沿ったPowerPointファイルを作成します。")
 
-# APIキーの入力（パスワードのように隠れる設定）
-api_key = st.text_input("Gemini APIキーを入力してください", type="password")
+# APIキーの読み込み（Secretsから取得）
+try:
+    api_key = st.secrets["GEMINI_API_KEY"]
+except KeyError:
+    st.error("APIキーが設定されていません。StreamlitのSecretsを設定してください。")
+    st.stop()
 
 # ルールの設定（裏側で固定）
 SLIDE_RULES = """
@@ -27,9 +31,7 @@ slide_plot = st.text_area("スライドにしたい原案（プロット）を�
 
 # 実行ボタン
 if st.button("スライドを生成する"):
-    if not api_key:
-        st.error("APIキーを入力してください。")
-    elif not slide_plot:
+    if not slide_plot:
         st.error("原案を入力してください。")
     else:
         with st.spinner("AIがスライドを生成中です...（10秒ほどお待ちください）"):
@@ -90,24 +92,3 @@ if st.button("スライドを生成する"):
 
             except Exception as e:
                 st.error(f"エラーが発生しました: {e}")
-</Step>
-
-<Step subtitle="世界に一つだけのURLが発行されます" title="STEP3：Webアプリとして公開する">
-1. [Streamlit Community Cloud](https://share.streamlit.io/) にアクセスします。
-2. 「**Continue with GitHub**」をクリックし、先ほど作ったGitHubアカウントでログイン・連携を許可します。
-3. ログイン後の画面右上にある青いボタン「**Create app**」をクリックします。
-4. 「Yep, I have an app」をクリックします。
-5. 「Repository」の欄をクリックすると、先ほど作った `slide-maker` が出てくるので選択します。
-6. 「Main file path」の欄に `app.py` と入っていることを確認します。
-7. 右下の「**Deploy!**」ボタンをクリックします。
-</Step>
-</Steps>
-
-画面に風船が飛び交うアニメーションが表示されれば、**あなた専用のWebアプリの完成です！**
-ブラウザ上部のURL（`https://〜.streamlit.app`）をブックマークしておけば、いつでもスマホや会社のPCからアクセスして、テキストを入れるだけでPPTXを作れるようになります。
-
-<ElicitationsGroup message="設定中に分からないことがあればお知らせください。">
-<Elicitation label="GitHubの操作で迷った" query="STEP1のGitHubで、ファイルの作り方や保存（Commit）のやり方がよくわかりませんでした。"/>
-<Elicitation label="Streamlitでエラーが出た" query="STEP3でDeployボタンを押したあと、赤いエラー文字が出てアプリが表示されませんでした。"/>
-<Elicitation label="アプリの見た目を変えたい" query="無事にWebアプリが完成しました！画面の色を変えたり、ルールのテキストを画面上で編集できるように改造したいです。"/>
-</ElicitationsGroup>
