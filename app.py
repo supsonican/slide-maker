@@ -37,7 +37,7 @@ if st.button("スライドを生成する"):
                 """
                 
                 response_step1 = client.models.generate_content(
-                    model='gemini-1.5-flash',
+                    model='gemini-3.8-flash',
                     contents=f"【プロット】\n{slide_plot}",
                     config=types.GenerateContentConfig(
                         system_instruction=step1_instruction,
