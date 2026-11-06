@@ -100,4 +100,54 @@ if st.button("スライドを生成する"):
                 
                 # JSONの抽出とパース
                 json_str = re.search(r'\[.*\]', response_step3.text, re.DOTALL)
-                slide_data = json.loads(json_str.group(0)) if json_str else json.loads
+                slide_data = json.loads(json_str.group(0)) if json_str else json.loads(response_step3.text)
+
+            # ==========================================
+            # PowerPointファイルの生成
+            # ==========================================
+            with st.spinner("最終仕上げ：PowerPointファイルを生成しています..."):
+                try:
+                    prs = Presentation("template.pptx")
+                except Exception:
+                    st.error("template.pptx が見つかりません。GitHubにJinbaのテンプレートをアップロードしてください。")
+                    st.stop()
+
+                for slide_info in slide_data:
+                    layout_id = slide_info.get("layout_id", 1)
+                    try:
+                        slide_layout = prs.slide_layouts[layout_id]
+                    except IndexError:
+                        slide_layout = prs.slide_layouts[1] # エラー時は標準の箇条書きにフォールバック
+                    
+                    slide = prs.slides.add_slide(slide_layout)
+                    
+                    if slide.shapes.title and "title" in slide_info:
+                        slide.shapes.title.text = str(slide_info["title"])
+                    
+                    if "content" in slide_info:
+                        content_items = slide_info["content"]
+                        ph_idx = 1
+                        
+                        if isinstance(content_items, list):
+                            if len(slide.shapes.placeholders) > 1:
+                                tf = slide.shapes.placeholders[1].text_frame
+                                if len(content_items) > 0:
+                                    tf.text = str(content_items[0])
+                                    for point in content_items[1:]:
+                                        p = tf.add_paragraph()
+                                        p.text = str(point)
+
+                pptx_io = io.BytesIO()
+                prs.save(pptx_io)
+                pptx_io.seek(0)
+
+                st.success("スライドの生成が完了しました！")
+                st.download_button(
+                    label="📥 PowerPointファイルをダウンロード",
+                    data=pptx_io,
+                    file_name="Jinba_Relay_Slides.pptx",
+                    mime="application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                )
+
+        except Exception as e:
+            st.error(f"処理中にエラーが発生しました: {e}")
