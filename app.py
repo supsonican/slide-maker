@@ -113,11 +113,15 @@ if st.button("スライドを生成する"):
                     st.stop()
 
                 for slide_info in slide_data:
-                    layout_id = slide_info.get("layout_id", 1)
+                    # 安全装置：指定レイアウトがない場合は1番、それもなければ絶対存在する0番を使う
                     try:
+                        layout_id = int(slide_info.get("layout_id", 1))
                         slide_layout = prs.slide_layouts[layout_id]
-                    except IndexError:
-                        slide_layout = prs.slide_layouts[1] # エラー時は標準の箇条書きにフォールバック
+                    except Exception:
+                        try:
+                            slide_layout = prs.slide_layouts[1]
+                        except Exception:
+                            slide_layout = prs.slide_layouts[0] 
                     
                     slide = prs.slides.add_slide(slide_layout)
                     
@@ -128,7 +132,20 @@ if st.button("スライドを生成する"):
                         content_items = slide_info["content"]
                         ph_idx = 1
                         
-                        if isinstance(content_items, list):
+                        # 辞書型（表や複数カラム）の場合
+                        if isinstance(content_items, dict):
+                            for key, text_val in content_items.items():
+                                while ph_idx < len(slide.shapes.placeholders):
+                                    shape = slide.shapes.placeholders[ph_idx]
+                                    ph_idx += 1
+                                    if shape.has_text_frame:
+                                        if isinstance(text_val, list):
+                                            shape.text = "\n".join(str(v) for v in text_val)
+                                        else:
+                                            shape.text = str(text_val)
+                                        break
+                        # リスト型（通常の箇条書き）の場合
+                        elif isinstance(content_items, list):
                             if len(slide.shapes.placeholders) > 1:
                                 tf = slide.shapes.placeholders[1].text_frame
                                 if len(content_items) > 0:
